@@ -1,163 +1,100 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import Loader from "../components/Loader";
+import EmptyState from "../components/EmptyState";
+import { getCountry, getBorders } from "../services/api";
 
 function CountryDetail() {
   const { code } = useParams();
   const navigate = useNavigate();
 
-  const [country, setCountry] = useState(undefined);
-  const [borderCountries, setBorderCountries] = useState([]);
-
-  const themeColor = "#00A0D7";
+  const [country, setCountry] = useState(null);
+  const [borders, setBorders] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setCountry(undefined);
-    setBorderCountries([]);
+    const load = async () => {
+      try {
+        const data = await getCountry(code);
+        const current = Array.isArray(data) ? data[0] : data;
 
-    fetch(`https://restcountries.com/v3.1/alpha/${code}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("API failed");
-        return res.json();
-      })
-      .then((data) => {
-        let current;
-
-        //  Handle both formats (array OR object)
-        if (Array.isArray(data)) {
-          current = data[0];
-        } else {
-          current = data;
-        }
-
-        if (!current || !current.name) {
+        if (!current) {
           setCountry(null);
           return;
         }
 
         setCountry(current);
 
-        //  Fetch border countries safely
-        if (current?.borders?.length > 0) {
-          fetch(
-            `https://restcountries.com/v3.1/alpha?codes=${current.borders.join(",")}`,
-          )
-            .then((res) => res.json())
-            .then((bdata) => {
-              if (Array.isArray(bdata)) {
-                setBorderCountries(bdata);
-              } else {
-                setBorderCountries([]);
-              }
-            })
-            .catch(() => setBorderCountries([]));
+        if (current?.borders?.length) {
+          const b = await getBorders(current.borders);
+          setBorders(b);
         }
-      })
-      .catch(() => {
+      } catch {
         setCountry(null);
-      });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
   }, [code]);
 
-  // Error state
-  if (country === null) {
-    return (
-      <p style={{ textAlign: "center", marginTop: "50px" }}>
-         Country not found
-      </p>
-    );
-  }
-
-  // Loading state
-  if (!country) {
-    return <p style={{ textAlign: "center", marginTop: "50px" }}>Loading...</p>;
-  }
+  if (loading) return <Loader />;
+  if (!country) return <EmptyState message="Country not found" />;
 
   return (
-    <div
-      style={{
-        padding: "20px",
-        fontFamily: "Arial",
-        background: "#f5f7fa",
-        minHeight: "100vh",
-      }}
-    >
-      {/* Back */}
-      <button
-        onClick={() => navigate("/")}
-        style={{
-          padding: "8px 12px",
-          marginBottom: "20px",
-          cursor: "pointer",
-          background: themeColor,
-          color: "white",
-          border: "none",
-          borderRadius: "5px",
-        }}
-      >
+    <div className="min-h-screen bg-gray-100 p-5">
+      <button className="btn mb-4" onClick={() => navigate("/")}>
         ⬅ Back
       </button>
 
-      <h1 style={{ color: themeColor }}>{country.name?.common}</h1>
+      <h1 className="text-3xl text-primary font-bold">{country.name.common}</h1>
 
-      <img
-        src={country.flags?.png}
-        alt={country.name?.common}
-        width="300"
-        style={{
-          borderRadius: "10px",
-          boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-        }}
-      />
+      <img src={country.flags.png} className="w-72 mt-3 rounded shadow" />
 
-      <div
-        style={{
-          marginTop: "20px",
-          background: "#fff",
-          padding: "15px",
-          borderRadius: "10px",
-        }}
-      >
+      <div className="bg-white p-4 mt-4 rounded shadow">
+        <p>Population: {country.population.toLocaleString()}</p>
+        <p>Region: {country.region}</p>
+        <p>Subregion: {country.subregion}</p>
+        <p>Capital: {country.capital?.[0]}</p>
+
         <p>
-          <strong>Population:</strong> {country.population?.toLocaleString()}
+          Languages:{" "}
+          {country.languages
+            ? Object.values(country.languages).join(", ")
+            : "N/A"}
         </p>
+
         <p>
-          <strong>Region:</strong> {country.region}
-        </p>
-        <p>
-          <strong>Capital:</strong> {country.capital?.[0]}
+          Currency:{" "}
+          {country.currencies
+            ? Object.values(country.currencies)
+                .map((c) => c.name)
+                .join(", ")
+            : "N/A"}
         </p>
       </div>
 
-      {/*  Map */}
       <iframe
-        title="map"
-        width="100%"
-        height="300"
-        style={{ marginTop: "20px", borderRadius: "10px" }}
+        className="w-full h-72 mt-4 rounded"
         src={`https://www.google.com/maps?q=${country.name.common}&output=embed`}
-      ></iframe>
+      />
 
-      {/*  Borders */}
-      <h3 style={{ marginTop: "20px", color: themeColor }}>Border Countries</h3>
+      <h3 className="mt-4 text-primary font-semibold">Border Countries</h3>
 
-      <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-        {borderCountries.length > 0 ? (
-          borderCountries.map((b) => (
+      <div className="flex gap-2 flex-wrap mt-2">
+        {borders.length ? (
+          borders.map((b) => (
             <button
               key={b.cca3}
+              className="btn"
               onClick={() => navigate(`/country/${b.cca3}`)}
-              style={{
-                padding: "6px 10px",
-                cursor: "pointer",
-                borderRadius: "5px",
-                border: "1px solid #ddd",
-                background: "#fff",
-              }}
             >
-              {b.name?.common}
+              {b.name.common}
             </button>
           ))
         ) : (
-          <p>No Border Countries</p>
+          <p>No Borders</p>
         )}
       </div>
     </div>

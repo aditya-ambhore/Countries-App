@@ -2,139 +2,49 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function CountryCard({ country, onDelete, onUpdate }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [name, setName] = useState(country.name?.common);
-  const [population, setPopulation] = useState(country.population);
+  const [edit, setEdit] = useState(false);
+  const [name, setName] = useState(country.name.common);
+  const [pop, setPop] = useState(country.population);
 
   const navigate = useNavigate();
 
-  const handleSave = () => {
-    onUpdate(country.cca3, name, population);
-    setIsEditing(false);
+  const save = () => {
+    onUpdate(country.cca3, name, pop);
+    setEdit(false);
   };
 
-  const themeColor = "#00A0D7";
-
   return (
-    <div
-      style={{
-        border: "1px solid #e5e5e5",
-        borderRadius: "12px",
-        padding: "12px",
-        width: "200px",
-        background: "#fff",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-        transition: "0.3s",
-      }}
-      onMouseOver={(e) => {
-        e.currentTarget.style.transform = "scale(1.03)";
-      }}
-      onMouseOut={(e) => {
-        e.currentTarget.style.transform = "scale(1)";
-      }}
-    >
-      {/* NAVIGATION AREA */}
-      <div
-        onClick={() => navigate(`/country/${country.cca3}`)}
-        style={{ cursor: "pointer" }}
-      >
-        <img
-          src={country.flags?.png}
-          alt={country.name?.common}
-          style={{
-            width: "100%",
-            height: "120px",
-            objectFit: "cover",
-            borderRadius: "8px",
-          }}
-        />
+    <div className="bg-white w-56 p-3 rounded-xl shadow hover:scale-105 transition">
+      
+      <div onClick={() => navigate(`/country/${country.cca3}`)} className="cursor-pointer">
+        <img src={country.flags.png} className="h-28 w-full object-cover rounded" />
 
-        {!isEditing && (
-          <div style={{ marginTop: "8px" }}>
-            <h3 style={{ margin: "5px 0", color: themeColor }}>
-              {country.name?.common}
+        {!edit && (
+          <>
+            <h3 className="text-primary font-semibold mt-2">
+              {country.name.common}
             </h3>
-            <p style={{ margin: "0", fontSize: "14px", color: "#555" }}>
+            <p className="text-sm text-gray-500">
               Population: {country.population.toLocaleString()}
             </p>
-          </div>
+          </>
         )}
       </div>
 
-      {/* EDIT SECTION */}
-      {isEditing ? (
-        <div style={{ marginTop: "10px" }}>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "6px",
-              marginBottom: "6px",
-              borderRadius: "5px",
-              border: "1px solid #ccc",
-            }}
-          />
+      {edit ? (
+        <>
+          <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+          <input className="input" type="number" value={pop} onChange={(e) => setPop(e.target.value)} />
 
-          <input
-            type="number"
-            value={population}
-            onChange={(e) => setPopulation(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "6px",
-              marginBottom: "6px",
-              borderRadius: "5px",
-              border: "1px solid #ccc",
-            }}
-          />
-
-          <button
-            onClick={handleSave}
-            style={{
-              width: "100%",
-              padding: "6px",
-              backgroundColor: themeColor,
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-          >
-            Save
-          </button>
-        </div>
+          <button className="btn w-full mt-2" onClick={save}>Save</button>
+        </>
       ) : (
-        <button
-          onClick={() => setIsEditing(true)}
-          style={{
-            marginTop: "10px",
-            width: "100%",
-            padding: "6px",
-            backgroundColor: themeColor,
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-          }}
-        >
-          Edit
-        </button>
+        <button className="btn w-full mt-2" onClick={() => setEdit(true)}>Edit</button>
       )}
 
-      {/*  DELETE */}
       <button
+        className="bg-red-500 text-white w-full mt-2 p-1 rounded"
         onClick={() => onDelete(country.cca3)}
-        style={{
-          marginTop: "8px",
-          width: "100%",
-          padding: "6px",
-          backgroundColor: "#ff4d4d",
-          color: "white",
-          border: "none",
-          borderRadius: "5px",
-          cursor: "pointer",
-        }}
       >
         Delete
       </button>
